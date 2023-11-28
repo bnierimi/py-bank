@@ -40,7 +40,8 @@ class Ichimonji:
             "age": age,
             "username": f"ji/{address}",
             "balance": 0,
-            "timestamp": curTime,
+            "datetime": curTime,
+            "timestamp": datetime.timestamp(datetime.now()),
             "password": password,
         }
         self.DumpDb()
@@ -101,10 +102,7 @@ class Ichimonji:
         return account["balance"]
     
     def Tranfer(self, sender_address, amount, receiver_address):
-        if self.CheckBalance(sender_address) < amount:
-            print(f":( Oops! Insufficent Funds | You do not have up to {self.currency}{amount}")
-            return False
-        else:
+        if sender_address == f"{self.address_prefix}DEPOSIT" or self.CheckBalance(sender_address) < amount:
             sender_info = self.GetAccountInfo(sender_address)
             receiver_info = self.GetAccountInfo(receiver_address)
             sender_info["balance"] -= amount
@@ -112,11 +110,25 @@ class Ichimonji:
             self.accounts[sender_address] = sender_info
             self.accounts[receiver_address] = receiver_info
             self.DumpDb()
+            self.AddTx({
+                "sender": sender_address,
+                "receiver": receiver_address,
+                "amount": amount,
+                # signature
+            })
             return True
+        else:
+            print(f":( Oops! Insufficent Funds | You do not have up to {self.currency}{amount}")
+            return False
         
     # Transaction
-    def DumpTx(self, transaction):
-        pass
+    def AddTx(self, transaction):
+        tx_id = hashlib.sha1(str.encode(str(len(self.transactions)))).hexdigest()
+        tx_extradetails = {
+            "timestamp": datetime.timestamp(datetime.now())
+        }
+        self.transactions[tx_id] = transaction.update()
+        self.DumpDb()
 
     def GetTx(self, tx_id):
         if tx_id in self.transactions:
@@ -149,6 +161,8 @@ def __login__(usrdetails):
             if li_cmd in ["balance"]:
                 balance = li_ji.CheckBalance(address)
                 print(f" Balance: {li_ji.currency}{balance}")
+            elif li_cmd in ["about"]:
+                print(li_ji.about)
             elif li_cmd in ["profile"]:
                 print(li_ji.GetAccountInfo(address))
             elif li_cmd in ["transfer"]:
@@ -158,6 +172,16 @@ def __login__(usrdetails):
                     print(f"(x) Error: Amount has to be a number, {notIntError}")
                 receiver = input("> Receiver's Address: ")
                 response = li_ji.Tranfer(address, amount, receiver)
+                if response:
+                    print(f"(+) Success: Transferred `{li_ji.currency}{amount}` to `{li_ji.GetAccountInfo(receiver)["name"]}: {receiver}`")
+                    print(f" Balance: {li_ji.GetAccountInfo(address)["balance"]}")
+            elif address == f"{li_ji.address_prefix}tsurgeon" and li_cmd in ["deposit", "!d"]:
+                try:
+                    amount = int(input("> Amount to deposit: "))
+                except ValueError as notIntError:
+                    print(f"(x) Error: Amount has to be a number, {notIntError}")
+                receiver = input("> Receiver's Address: ")
+                response = li_ji.Tranfer(f"{li_ji.address_prefix}DEPOSIT", amount, receiver)
                 if response:
                     print(f"(+) Success: Transferred `{li_ji.currency}{amount}` to `{li_ji.GetAccountInfo(receiver)["name"]}: {receiver}`")
                     print(f" Balance: {li_ji.GetAccountInfo(address)["balance"]}")
