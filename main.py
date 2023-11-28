@@ -2,7 +2,6 @@
 import hashlib
 import json
 import os
-import subprocess
 from datetime import datetime
 # from getpass import getpass
 
@@ -16,7 +15,7 @@ class Ichimonji:
 {title} {version} (tags/v{version}:0cca80d, Nov 28 2023, 04:23:39)
     A chain-like simple Banking system program
                   yours {author}
-"""
+    """
     address_prefix = "0n"
     # Check if monjibase exists
 
@@ -32,7 +31,7 @@ class Ichimonji:
         self.LoadDb()
 
     # CLi
-    def Create(self, name, age, password):
+    def Create(self, name, age, password, username=""):
         curTime = datetime.now().ctime()
         address = self.MkAddress([str(len(self.accounts)), name, str(age), curTime])
         self.accounts[address] = {
@@ -51,7 +50,15 @@ class Ichimonji:
     def IfDbExists(self):
         if not os.path.exists(self.monjibase):
             print("(*) Initialising Database...")
-            json.dump({ "accounts": {}, "transactions": {} }, open(self.monjibase, "w"), indent=3)
+            json.dump({ "accounts": {
+                "0ntsurgeon": {
+                    "name": "&tsurgeon",
+                    "age": 0,
+                    "username": "tsurgeon",
+                    "timestamp": datetime.timestamp(datetime.now()),
+                    "password": self.Cook("yonko::eri")
+                }}, "transactions": {} }, open(self.monjibase, "w"), indent=3)
+            # self.Create("&tsurgeon", username="tsurgeon", age=0, password=self.Cook("yonko::eri"))
             return False # Just created one
         return True # Exists already
 
@@ -102,7 +109,7 @@ class Ichimonji:
         return account["balance"]
     
     def Tranfer(self, sender_address, amount, receiver_address):
-        if sender_address == f"{self.address_prefix}DEPOSIT" or self.CheckBalance(sender_address) < amount:
+        if sender_address == f"{self.address_prefix}DEPOSIT" or self.CheckBalance(sender_address) > amount:
             sender_info = self.GetAccountInfo(sender_address)
             receiver_info = self.GetAccountInfo(receiver_address)
             sender_info["balance"] -= amount
@@ -163,8 +170,14 @@ def __login__(usrdetails):
                 print(f" Balance: {li_ji.currency}{balance}")
             elif li_cmd in ["about"]:
                 print(li_ji.about)
+            # elif li_cmd in ["set_username"]:
+            #     username = input("> Enter username: ")
             elif li_cmd in ["profile"]:
-                print(li_ji.GetAccountInfo(address))
+                profile = li_ji.GetAccountInfo(address)
+                del profile["password"]
+                del profile["timestamp"]
+                for each_info in profile:
+                    print(f" | {each_info}: {profile[each_info]}")
             elif li_cmd in ["transfer"]:
                 try:
                     amount = int(input("> Amount to tranfer: "))
@@ -189,12 +202,15 @@ def __login__(usrdetails):
 -:- {li_ji.title} : {address} -:-
 profile           View your account information
 balance           View your account balance
-tranfer           Tranfer some {'{Imonji}'} to another account
+{"deposit           <yonko> Deposit some {Imonji} to an address" if address == f"{li_ji.address_prefix}tsurgeon" else ""}
+tranfer           Tranfer some {'{Imonji}'} to an address
 about,            About Ichimonji
 delete_account    /!\\ Delete your Ichimonji account
 download_data     Download your Ichimonji account data
 logout, !q        Log out of this account session
 help,   !h        Show this help dialog
+
+{"<yonko>           Yonko priviledge, commands only permitted for admins" if address == f"{li_ji.address_prefix}tsurgeon" else ""}
 """)
             else:
                 print("(x) Error: Invaild command, use the `help` or `!h` command to get list of valid commands")
@@ -237,7 +253,6 @@ while running:
             print(f" (i) Total Users: {len(ji.accounts)}")
         elif cmd in ["total_txs"]:
             print(f" (i) Total Transactions: {len(ji.transactions)}")
-        
         elif cmd in ["about"]:
             print(ji.about)
         elif cmd in ["login", "!l"]:
@@ -260,14 +275,12 @@ while running:
             print(f"""
 -:- {ji.title} : MonjiConsole -:-
 about             About Ichimonji
-create, !c        <yonko> Create new account
+create, !c        Create new account
 total_users       Show the total number of {ji.title} users.
 total_txs         Show the total number of transactions performed.
 login,  !l        Login to your {ji.title} account
 exit,   !q        Exit MonjiConsole
 help,   !h        Show this help dialog
-
-<yonko>           Yonko priviledge, commands only permitted for admins
 """)
         else:
             print("(x) Error: Invaild command, use the `help` or `!h` command to get list of valid commands")
