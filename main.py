@@ -183,8 +183,7 @@ def __login__(usrdetails):
                 receiver = input("> Receiver's Address: ")
                 response = li_ji.Tranfer(f"{li_ji.address_prefix}DEPOSIT", amount, receiver)
                 if response:
-                    print(f"(+) Success: Transferred `{li_ji.currency}{amount}` to `{li_ji.GetAccountInfo(receiver)["name"]}: {receiver}`")
-                    print(f" Balance: {li_ji.GetAccountInfo(address)["balance"]}")
+                    print(f"(+) Success: Deposited `{li_ji.currency}{amount}` to `{receiver}`")
             elif li_cmd in ["help", "!h"]:
                 print(f"""
 -:- {li_ji.title} : {address} -:-
