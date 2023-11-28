@@ -1,0 +1,36 @@
+schema WadoMonji {
+  profiles: {
+      address: {
+        name,
+        age,
+        balance,
+        timestamp,
+        passwrd
+      }
+  },
+
+  transactions: [
+    id: {
+      sender,
+      receiver,
+      amount,
+      gasfee,
+      datetime,
+      timestamp
+    }
+  ]
+}
+
+-:- {ji.title} : MonjiConsole -:-
+about,            About Ichimonji
+help,   !h        Show this help dialog
+
+-:- {li_ji.title} : {usrdetails["address"]} -:-
+profile           View your account information
+balance           View your account balance
+tranfer           Tranfer some {Imonji} to another account
+about,            About Ichimonji
+delete_account    /!\ Delete your Ichimonji account
+download_data     Download your Ichimonji account data
+logout, !q        Log out of this account session
+help,   !h        Show this help dialog
