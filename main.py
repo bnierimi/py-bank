@@ -7,9 +7,16 @@ from datetime import datetime
 # from getpass import getpass
 
 class Ichimonji:
-    title    = "Ichimonji"
-    currency = "{i}"
+    title     = "Ichimonji"
+    author    = "t/bnierimi"
+    version   = "0.10.0"
+    currency  = "{i}"
     monjibase = ".monji.wado"
+    about     = f"""
+{title} {version} (tags/v{version}:0cca80d, Nov 28 2023, 04:23:39)
+    A chain-like simple Banking system program
+                  yours {author}
+"""
     address_prefix = "0n"
     # Check if monjibase exists
 
@@ -31,7 +38,7 @@ class Ichimonji:
         self.accounts[address] = {
             "name": name,
             "age": age,
-            # "address": address,
+            "username": f"ji/{address}",
             "balance": 0,
             "timestamp": curTime,
             "password": password,
@@ -73,17 +80,18 @@ class Ichimonji:
         result = list(hashlib.sha3_512(str.encode(value)).hexdigest())
         result.reverse()
         return "".join(result)
+
+    def Auth(self, address, password):
+        pass
     
     # Account
     def GetAccountInfo(self, address):
-        for each_account in self.accounts:
-            if address == each_account:
-                account_info = self.accounts[each_account]
-                break
+        if address in self.accounts:
+            account_info = self.accounts[address]
+            return account_info
         else:
             return False
             # print(":( Oops! Address not found,\n Don't have an account? Create one with the command `create` or `!c`")
-        return account_info
 
     def CheckBalance(self, address):
         account = self.GetAccountInfo(address)
@@ -105,6 +113,18 @@ class Ichimonji:
             self.accounts[receiver_address] = receiver_info
             self.DumpDb()
             return True
+        
+    # Transaction
+    def DumpTx(self, transaction):
+        pass
+
+    def GetTx(self, tx_id):
+        if tx_id in self.transactions:
+            return self.transactions[tx_id]
+        else:
+            return False
+
+
 
 
 
@@ -119,7 +139,7 @@ def __login__(usrdetails):
     address = usrdetails["address"]
     account = li_ji.GetAccountInfo(address)
     logged_in = True
-    print(f"--- {li_ji.title} : Welcome {account["name"]} ---")
+    print(f"--- {li_ji.title} : Welcome, {account["name"]} ---")
     while logged_in:
         print()
         li_cmd = input(f" ji/{address}> ").lower()
@@ -133,10 +153,10 @@ def __login__(usrdetails):
                 print(li_ji.GetAccountInfo(address))
             elif li_cmd in ["transfer"]:
                 try:
-                    amount = int(input(" > Amount to tranfer: "))
+                    amount = int(input("> Amount to tranfer: "))
                 except ValueError as notIntError:
                     print(f"(x) Error: Amount has to be a number, {notIntError}")
-                receiver = input(" > Receiver's Address: ")
+                receiver = input("> Receiver's Address: ")
                 response = li_ji.Tranfer(address, amount, receiver)
                 if response:
                     print(f"(+) Success: Transferred `{li_ji.currency}{amount}` to `{li_ji.GetAccountInfo(receiver)["name"]}: {receiver}`")
@@ -155,6 +175,9 @@ help,   !h        Show this help dialog
 """)
             else:
                 print("(x) Error: Invaild command, use the `help` or `!h` command to get list of valid commands")
+
+
+
 
 
 # CLI
@@ -187,8 +210,15 @@ while running:
  | Address | {usrname_and_address["address"]}
  -----------
 """)
+        elif cmd in ["total_users"]:
+            print(f" (i) Total Users: {len(ji.accounts)}")
+        elif cmd in ["total_txs"]:
+            print(f" (i) Total Transactions: {len(ji.transactions)}")
+        
+        elif cmd in ["about"]:
+            print(ji.about)
         elif cmd in ["login", "!l"]:
-            usraddress = input(" > Enter your address: ")
+            usraddress = input("> Enter your address: ")
             for each_account in ji.accounts:
                 if usraddress == each_account:
                     account = ji.accounts[each_account]
@@ -196,7 +226,7 @@ while running:
             else:
                 print(" :( Oops! Address not found,\n Don't have an account? Create one with the command `create` or `!c`\n")
                 continue
-            password = ji.Cook(input(" > Enter your password: "))
+            password = ji.Cook(input("> Enter your password: "))
             if password == account["password"]:
                 del account["password"]
                 del account["age"]
@@ -207,11 +237,14 @@ while running:
             print(f"""
 -:- {ji.title} : MonjiConsole -:-
 about             About Ichimonji
+create, !c        <yonko> Create new account
 total_users       Show the total number of {ji.title} users.
 total_txs         Show the total number of transactions performed.
-login, !l         Login to your {ji.title} account
-exit,  !q         Exit MonjiConsole
-help,  !h         Show this help dialog
+login,  !l        Login to your {ji.title} account
+exit,   !q        Exit MonjiConsole
+help,   !h        Show this help dialog
+
+<yonko>           Yonko priviledge, commands only permitted for admins
 """)
         else:
             print("(x) Error: Invaild command, use the `help` or `!h` command to get list of valid commands")

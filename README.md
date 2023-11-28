@@ -4,12 +4,23 @@
 ## Like an ATM
 - Normal 
 - [x] Create new account
+- [x] Total Users
+- [x] Total Transactions
+- [x] About
 - [x] Login
+- [x] Help
+- [x] Exit
 
 - While Logged in
-- [ ] Check balance
-- [ ] Transfer
+- [ ] Profile
+- [x] Check balance
+- [x] Transfer
+- [x] About
 - [ ] Delete account
 - [ ] Download account data
-- [?] Deposit
-- [ ] 
+- [x] Help
+- [ ] Logout
+
+- [ ] Admin priviledge
+    - [?] Deposit
+    - [ ] Get address from fullname

@@ -2,10 +2,11 @@ schema WadoMonji {
   profiles: {
       address: {
         name,
+        username,
         age,
         balance,
         timestamp,
-        passwrd
+        password
       }
   },
 
@@ -17,6 +18,13 @@ schema WadoMonji {
       gasfee,
       datetime,
       timestamp
+    }
+  ],
+
+  auth: [
+    {
+      address,
+      password
     }
   ]
 }
