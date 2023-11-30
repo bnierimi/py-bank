@@ -7,6 +7,7 @@ schema WadoMonji {
         balance,
         timestamp,
         password
+        transactions: []
       }
   },
 

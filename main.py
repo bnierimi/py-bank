@@ -3,6 +3,7 @@ import hashlib
 import json
 import os
 from datetime import datetime
+import time
 # from getpass import getpass
 
 class Ichimonji:
@@ -45,22 +46,6 @@ class Ichimonji:
         else:
             json.dump(content, open(filename, mode), indent=indent)
 
-    # CLi
-    def Create(self, name, age, password, username=""):
-        curTime = datetime.now().ctime()
-        address = self.MkAddress([str(len(self.accounts)), name, str(age), curTime])
-        self.accounts[address] = {
-            "name": name,
-            "age": age,
-            "username": f"ji/{address}",
-            "balance": 0,
-            "datetime": curTime,
-            "timestamp": datetime.timestamp(datetime.now()),
-            "password": password,
-        }
-        self.WriteToDb()
-        return { "name": name, "address": address }
-
     # DB
     def IfDbExists(self):
         if not os.path.exists(self.monjibase):
@@ -72,6 +57,7 @@ class Ichimonji:
                     "username": "tsurgeon",
                     "balance": 1_000_000_000,
                     "timestamp": datetime.timestamp(datetime.now()),
+                    "transactions": [],
                     "password": self.Cook("yonko::eri")
                 }}, "transactions": {} }, open(self.monjibase, "w"), indent=3)
             # self.Create("&tsurgeon", username="tsurgeon", age=0, password=self.Cook("yonko::eri"))
@@ -91,6 +77,25 @@ class Ichimonji:
             "transactions": self.transactions,
         }
         json.dump(data, open(self.monjibase, "w"), indent=3)
+
+    # CLi
+    def Create(self, name, age, password, username=""):
+        curTime = datetime.now().ctime()
+        address = self.MkAddress([str(len(self.accounts)), name, str(age), curTime])
+        if len(username) != 0:
+            username = f"ji/{address}"
+        self.accounts[address] = {
+            "name": name,
+            "age": age,
+            "username": username,
+            "balance": 0,
+            # "datetime": curTime,
+            "timestamp": datetime.timestamp(datetime.now()),
+            "transactions": [],
+            "password": password,
+        }
+        self.WriteToDb()
+        return { "name": name, "address": address, "username": username }
 
     # Methods
     def MkAddress(self, details):
@@ -132,32 +137,39 @@ class Ichimonji:
         return account["balance"]
     
     def Tranfer(self, sender_address, amount, receiver_address):
+        start = time.time()
         if sender_address == f"{self.address_prefix}DEPOSIT" or self.CheckBalance(sender_address) > amount:
             sender_info = self.GetAccountInfo(sender_address)
             receiver_info = self.GetAccountInfo(receiver_address)
-            sender_info["balance"] -= amount
-            receiver_info["balance"] += amount
-            self.accounts[sender_address] = sender_info
-            self.accounts[receiver_address] = receiver_info
-            self.WriteToDb()
-            self.AddTx({
-                "sender": sender_address,
-                "receiver": receiver_address,
-                "amount": amount,
-                # signature
-            })
-            return True
+            if receiver_info == False:
+                print("(x) Unknown address")
+                return False
+            else:
+                sender_info["balance"] -= amount
+                receiver_info["balance"] += amount
+                self.accounts[sender_address] = sender_info
+                self.accounts[receiver_address] = receiver_info
+                # len_gas, gas_fee = f"{time.time()-start}".split(".")
+                # len_gas_fee = len(len_gas)
+                self.AddTx({
+                    "sender": sender_address,
+                    "receiver": receiver_address,
+                    "amount": amount,
+                    # "gas_fee": 
+                    # signature
+                })
+                return True
         else:
             print(f":( Oops! Insufficent Funds | You do not have up to {self.currency}{amount}")
             return False
         
     # Transaction
     def AddTx(self, transaction):
-        tx_id = hashlib.sha1(str.encode(str(len(self.transactions)))).hexdigest()
-        tx_extradetails = {
-            "timestamp": datetime.timestamp(datetime.now())
-        }
-        self.transactions[tx_id] = transaction.update()
+        tx_id = hashlib.sha1(str.encode(f"<%tcitrogg://tx/{len(self.transactions)}~{transaction}>")).hexdigest()
+        transaction["timestamp"] = datetime.timestamp(datetime.now())
+        self.transactions[tx_id] = transaction
+        self.GetAccountInfo(transaction["sender"])["transactions"].append(tx_id)
+        self.GetAccountInfo(transaction["receiver"])["transactions"].append(tx_id)
         self.WriteToDb()
 
     def GetTx(self, tx_id):
@@ -197,14 +209,15 @@ def __login__(usrdetails):
             #     username = input("> Enter username: ")
             elif li_cmd in ["profile"]:
                 profile = li_ji.GetAccountInfo(address)
-                del profile["password"]
-                del profile["timestamp"]
                 longest_word = ""
                 for each_info in profile:
                     if len(each_info) > len(longest_word):
                         longest_word = each_info
                 for each_info in profile:
-                    print(" | {}: {}".format(each_info.title().ljust(len(longest_word)+1, " "), profile[each_info]))
+                    if profile[each_info] != "password":
+                        print(" | {}: {}".format(each_info.title().ljust(len(longest_word)+1, " "), profile[each_info]))
+                    elif profile[each_info] == "timestamp":
+                        print(" | {}: {}".format(each_info.title().ljust(len(longest_word)+1, " "), datetime.fromtimestamp(profile[each_info])))
             elif li_cmd in ["transfer"]:
                 try:
                     amount = int(input("> Amount to tranfer: "))
@@ -214,7 +227,9 @@ def __login__(usrdetails):
                 response = li_ji.Tranfer(address, amount, receiver)
                 if response:
                     print(f"(+) Success: Transferred `{li_ji.currency}{amount}` to `{li_ji.GetAccountInfo(receiver)["name"]}: {receiver}`")
-                    print(f" Balance: {li_ji.GetAccountInfo(address)["balance"]}")
+                    print(f" Balance: {li_ji.currency}{li_ji.GetAccountInfo(address)["balance"]}")
+            elif li_cmd in ["gettx"]:
+                li_ji.GetTx()
             elif address == f"{li_ji.address_prefix}tsurgeon" and li_cmd in ["deposit", "!d"]:
                 try:
                     amount = int(input("> Amount to deposit: "))
@@ -253,7 +268,9 @@ def __login__(usrdetails):
             elif li_cmd in ["download_data"]:
                 password = li_ji.Cook(input("> Enter password: "))
                 account = li_ji.GetAccountInfo(address)
-                li_ji.DumpFl(f"{address}-info.json", account)
+                copy_account = account
+                del copy_account["password"]
+                li_ji.DumpFl(f"{address}-info.json", copy_account)
                 print(f"(+) Downloaded account data as `{address}-info.json`")
                 # if password == account["password"]:
                 #     del account["password"]
@@ -311,8 +328,7 @@ while running:
  | Username | {usrname_and_address["username"]}
  -----------
 
- ! Login to update your username
-""")
+ ! Login to update your username""")
         elif cmd in ["total_users"]:
             print(f" (i) Total Users: {len(ji.accounts)}")
         elif cmd in ["total_txs"]:
