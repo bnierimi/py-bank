@@ -12,15 +12,16 @@
 - [x] Exit
 
 - While Logged in
-- [ ] Profile
+- [x] Profile
 - [x] Check balance
 - [x] Transfer
 - [x] About
 - [ ] Delete account
 - [ ] Download account data
+- [ ] Change username
 - [x] Help
-- [ ] Logout
+- [x] Logout
 
 - [ ] Admin priviledge
     - [?] Deposit
-    - [ ] Get address from fullname
+    - [x] Get account details from address / username
