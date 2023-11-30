@@ -17,7 +17,7 @@
 - [x] Transfer
 - [x] About
 - [ ] Delete account
-- [ ] Download account data
+- [x] Download account data
 - [ ] Change username
 - [x] Help
 - [x] Logout
